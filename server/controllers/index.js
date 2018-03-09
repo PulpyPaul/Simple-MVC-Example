@@ -51,6 +51,10 @@ const readAllCats = (req, res, callback) => {
   Cat.find(callback);
 };
 
+const readAllDogs = (req, res, callback) => {
+  Dog.find(callback);
+};
+
 
 // function to find a specific cat on request.
 // Express functions always receive the request and the response.
@@ -118,6 +122,19 @@ const hostPage3 = (req, res) => {
     // actually calls index.jade. A second parameter of JSON can be passed
     // into the jade to be used as variables with #{varName}
   res.render('page3');
+};
+
+const hostPage4 = (req, res) => {
+  const callback = (err, docs) => {
+    if (err) {
+      return res.json({ err }); // if error, return it
+    }
+
+    // return success
+    return res.render('page4', { dogs: docs });
+  };
+
+  readAllDogs(req, res, callback);
 };
 
 // function to handle get request to send the name
@@ -242,11 +259,11 @@ const searchName = (req, res) => {
 };
 
 const searchDogName = (req, res) => {
-  if (!req.query.name) {
+  if (!req.body.name) {
     return res.json({ error: 'Name is required to search' });
   }
 
-  return Dog.findByDogName(req.query.name, (err, doc) => {
+  return Dog.findByDogName(req.body.name, (err, doc) => {
     if (err) {
       return res.json({ err });
     }
@@ -255,7 +272,12 @@ const searchDogName = (req, res) => {
       return res.json({ error: 'No dogs found' });
     }
 
-    return res.json({ name: doc.name, breed: doc.breed, age: doc.age });
+    const updatedDog = new Dog(doc);
+    updatedDog.age++;
+    const savePromise = updatedDog.save();
+    savePromise.then(() => res.json({ name: updatedDog.name, age: updatedDog.age }));
+
+    return res.json({ updatedDog });
   });
 };
 
@@ -306,6 +328,7 @@ module.exports = {
   page1: hostPage1,
   page2: hostPage2,
   page3: hostPage3,
+  page4: hostPage4,
   readCat,
   getName,
   setName,
